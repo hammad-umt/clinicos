@@ -1,0 +1,12 @@
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\bin\Debug\net10.0\ClinicOS.Domain.deps.json
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\bin\Debug\net10.0\ClinicOS.Domain.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\bin\Debug\net10.0\ClinicOS.Domain.pdb
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.csproj.AssemblyReference.cache
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.AssemblyInfoInputs.cache
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.AssemblyInfo.cs
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.csproj.CoreCompileInputs.cache
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\refint\ClinicOS.Domain.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.pdb
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ref\ClinicOS.Domain.dll

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ClinicOS.API/ClinicOS.API.csproj" />
+  <Project Path="ClinicOS.Application/ClinicOS.Application.csproj" />
+  <Project Path="ClinicOS.Domain/ClinicOS.Domain.csproj" />
+  <Project Path="ClinicOS.Infrastructure/ClinicOS.Infrastructure.csproj" />
+</Solution>
