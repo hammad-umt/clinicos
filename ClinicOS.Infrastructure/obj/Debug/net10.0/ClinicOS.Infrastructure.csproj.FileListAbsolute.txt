@@ -36,3 +36,4 @@ D:\Dotnet Projects\ClinicOS\ClinicOS.Infrastructure\obj\Debug\net10.0\refint\Cli
 D:\Dotnet Projects\ClinicOS\ClinicOS.Infrastructure\obj\Debug\net10.0\ClinicOS.Infrastructure.pdb
 D:\Dotnet Projects\ClinicOS\ClinicOS.Infrastructure\obj\Debug\net10.0\ClinicOS.Infrastructure.genruntimeconfig.cache
 D:\Dotnet Projects\ClinicOS\ClinicOS.Infrastructure\obj\Debug\net10.0\ref\ClinicOS.Infrastructure.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Infrastructure\obj\Debug\net10.0\ClinicOS.Infrastructure.sourcelink.json

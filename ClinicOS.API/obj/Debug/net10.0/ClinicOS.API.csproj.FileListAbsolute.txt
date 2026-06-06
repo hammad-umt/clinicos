@@ -210,3 +210,4 @@ D:\Dotnet Projects\ClinicOS\ClinicOS.API\obj\Debug\net10.0\refint\ClinicOS.API.d
 D:\Dotnet Projects\ClinicOS\ClinicOS.API\obj\Debug\net10.0\ClinicOS.API.pdb
 D:\Dotnet Projects\ClinicOS\ClinicOS.API\obj\Debug\net10.0\ClinicOS.API.genruntimeconfig.cache
 D:\Dotnet Projects\ClinicOS\ClinicOS.API\obj\Debug\net10.0\ref\ClinicOS.API.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.API\obj\Debug\net10.0\ClinicOS.API.sourcelink.json

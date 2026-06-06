@@ -124,5 +124,33 @@ namespace ClinicOS.Infrastructure.Services
             await _tokenRepository.Update(token);
             await _tokenRepository.SaveChangesAsync();
         }
+        public async Task<IEnumerable<TokenDto>> GetAllTokensAsync()
+        {
+            var tokens = await _tokenRepository.GetAllTokensAsync();
+
+            if (!tokens.Any())
+            {
+                throw new Exception("No tokens found");
+            }
+
+            return tokens.Select(t => new TokenDto
+            {
+                Id = t.Id,
+                TokenNumber = t.TokenNumber,
+                PatientId = t.PatientId,
+
+                PatientName = t.Patient?.Name ?? "Unknown Patient",
+                PatientPhone = t.Patient?.Phone ?? "",
+
+                DoctorId = t.DoctorId,
+                DoctorName =
+                    t.Doctor?.User?.FullName ??
+                    t.Doctor?.Name ??
+                    "Unknown Doctor",
+
+                Status = t.Status.ToString(),
+                CreatedAt = t.CreatedAt
+            });
+        }
     }
 }

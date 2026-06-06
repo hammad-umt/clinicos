@@ -10,3 +10,4 @@ D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.dl
 D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\refint\ClinicOS.Domain.dll
 D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.pdb
 D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ref\ClinicOS.Domain.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Domain\obj\Debug\net10.0\ClinicOS.Domain.sourcelink.json

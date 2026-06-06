@@ -19,7 +19,20 @@ namespace ClinicOS.API.Controllers
             _tokenService = tokenService;
             _logger = logger;
         }
-
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TokenDto>>> GetAllTokens()
+        {
+            try
+            {
+                var result = await _tokenService.GetAllTokensAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting today's tokens");
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         [HttpGet("today/{doctorId}")]
         public async Task<ActionResult<IEnumerable<TokenDto>>> GetTodayTokens(int doctorId)
         {

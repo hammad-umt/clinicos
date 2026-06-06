@@ -9,6 +9,16 @@ public class TokenRepository : GenericRepository<Token>
     {
     }
 
+    public async Task<IEnumerable<Token>> GetAllTokensAsync()
+    {
+        return await _dbSet
+            .Include(t => t.Patient)
+            .Include(t => t.Doctor)
+                .ThenInclude(d => d.User)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<Token>> GetTodayTokensAsync(int doctorId)
     {
         var today = DateTime.UtcNow.Date;
@@ -17,7 +27,8 @@ public class TokenRepository : GenericRepository<Token>
             .Include(t => t.Patient)
             .Include(t => t.Doctor)
                 .ThenInclude(d => d.User)
-            .Where(t => t.DoctorId == doctorId && t.CreatedAt.Date == today)
+            .Where(t => t.DoctorId == doctorId &&
+                        t.CreatedAt.Date == today)
             .OrderBy(t => t.TokenNumber)
             .ToListAsync();
     }
@@ -35,6 +46,8 @@ public class TokenRepository : GenericRepository<Token>
     {
         return await _dbSet
             .Include(t => t.Patient)
+            .Include(t => t.Doctor)
+                .ThenInclude(d => d.User)
             .Where(t => t.DoctorId == doctorId)
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync();
@@ -43,6 +56,7 @@ public class TokenRepository : GenericRepository<Token>
     public async Task<IEnumerable<Token>> GetByPatientAsync(int patientId)
     {
         return await _dbSet
+            .Include(t => t.Patient)
             .Include(t => t.Doctor)
                 .ThenInclude(d => d.User)
             .Where(t => t.PatientId == patientId)
@@ -55,7 +69,8 @@ public class TokenRepository : GenericRepository<Token>
         var today = DateTime.UtcNow.Date;
 
         var lastToken = await _dbSet
-            .Where(t => t.DoctorId == doctorId && t.CreatedAt.Date == today)
+            .Where(t => t.DoctorId == doctorId &&
+                        t.CreatedAt.Date == today)
             .OrderByDescending(t => t.TokenNumber)
             .FirstOrDefaultAsync();
 

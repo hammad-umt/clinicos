@@ -13,3 +13,4 @@ D:\Dotnet Projects\ClinicOS\ClinicOS.Application\obj\Debug\net10.0\ClinicOS.Appl
 D:\Dotnet Projects\ClinicOS\ClinicOS.Application\obj\Debug\net10.0\refint\ClinicOS.Application.dll
 D:\Dotnet Projects\ClinicOS\ClinicOS.Application\obj\Debug\net10.0\ClinicOS.Application.pdb
 D:\Dotnet Projects\ClinicOS\ClinicOS.Application\obj\Debug\net10.0\ref\ClinicOS.Application.dll
+D:\Dotnet Projects\ClinicOS\ClinicOS.Application\obj\Debug\net10.0\ClinicOS.Application.sourcelink.json

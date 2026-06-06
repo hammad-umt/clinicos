@@ -8,5 +8,6 @@ namespace ClinicOS.Application.Interfaces
         Task<IEnumerable<TokenDto>> GetTodayTokensAsync(int doctorId);
         Task<TokenDto> CreateAsync(CreateTokenDto dto);
         Task UpdateStatusAsync(int id, TokenStatus status);
+        Task<IEnumerable<TokenDto>> GetAllTokensAsync();
     }
 }
