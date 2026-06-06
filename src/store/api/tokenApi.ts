@@ -16,9 +16,24 @@ export const tokenApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Token" as const, id })),
-              { type: "Token", id: "LIST" },
-            ]
+            ...result.map(({ id }) => ({ type: "Token" as const, id })),
+            { type: "Token", id: "LIST" },
+          ]
+          : [{ type: "Token", id: "LIST" }],
+    }),
+    getAllTokens: builder.query<Token[], void>({
+      query: () => "/Token",
+      transformResponse: (response: unknown) =>
+        mapArray(response, mapToken),
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.map(({ id }) => ({
+              type: "Token" as const,
+              id,
+            })),
+            { type: "Token", id: "LIST" },
+          ]
           : [{ type: "Token", id: "LIST" }],
     }),
     createToken: builder.mutation<Token, TokenCreateRequest>({
@@ -59,4 +74,5 @@ export const {
   useGetTodayTokensQuery,
   useCreateTokenMutation,
   useUpdateTokenStatusMutation,
+  useGetAllTokensQuery,
 } = tokenApi;

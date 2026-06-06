@@ -24,6 +24,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useGetDashboardStatsQuery } from "@/store/api/dashboardApi";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useGetAllTokensQuery } from "@/store/api/tokenApi";
 
 const statCards: {
   key: "todayPatients" | "totalPatients" | "totalDoctors" | "todayRevenue";
@@ -31,14 +32,15 @@ const statCards: {
   icon: typeof Ticket;
   format?: (n: number) => string;
 }[] = [
-  { key: "todayPatients", label: "Today's Patients", icon: Ticket },
-  { key: "totalPatients", label: "Total Patients", icon: Users },
-  { key: "totalDoctors", label: "Total Doctors", icon: Stethoscope },
-  { key: "todayRevenue", label: "Revenue Today", icon: Banknote, format: formatCurrency },
-];
+    { key: "todayPatients", label: "Today's Patients", icon: Ticket },
+    { key: "totalPatients", label: "Total Patients", icon: Users },
+    { key: "totalDoctors", label: "Total Doctors", icon: Stethoscope },
+    { key: "todayRevenue", label: "Revenue Today", icon: Banknote, format: formatCurrency },
+  ];
 
 export default function DashboardPage() {
   const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery();
+  const { data: tokensData, isLoading: tokensLoading, isError: tokensError, } = useGetAllTokensQuery();
   console.log("Dashboard stats:", data);
   if (isError) {
     return <QueryError onRetry={refetch} />;
@@ -98,7 +100,7 @@ export default function DashboardPage() {
           <CardDescription>Latest queue activity today</CardDescription>
         </CardHeader>
         <CardContent>
-          {!data?.recentTokens?.length ? (
+          {!tokensData?.length ? (
             <EmptyState title="No tokens today" description="Tokens issued today will appear here." />
           ) : (
             <Table>
@@ -112,7 +114,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.recentTokens.map((token) => (
+                {tokensData.map((token) => (
                   <TableRow key={token.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">#{token.tokenNumber}</TableCell>
                     <TableCell>{token.patientName}</TableCell>
