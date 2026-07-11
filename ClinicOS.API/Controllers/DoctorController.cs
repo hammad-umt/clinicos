@@ -35,6 +35,7 @@ public async Task<ActionResult<IEnumerable<DoctorDto>>> GetAll()
             Email = d.Email,
             Specialization = d.Specialization,
             ConsultationFee = d.ConsultationFee,
+            DepartmentId = d.DepartmentId,
             DepartmentName = d.DepartmentName,
             IsActive = d.IsActive
         }).ToList();

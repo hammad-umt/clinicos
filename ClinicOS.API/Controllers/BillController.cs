@@ -35,7 +35,20 @@ namespace ClinicOS.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
+        [HttpGet("getall-bills")]
+        public async Task<ActionResult<IEnumerable<BillDto>>> GetAllByTokenIds([FromQuery] List<int> tokenIds)
+        {
+            try
+            {
+                var result = await _billService.GetAll();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting bills by token IDs");
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         [HttpGet("token/{tokenId}")]
         public async Task<ActionResult<BillDto>> GetByTokenId(int tokenId)
         {
