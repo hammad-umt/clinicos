@@ -1,6 +1,13 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format, parseISO } from "date-fns";
+import {
+  endOfMonth,
+  format,
+  isWithinInterval,
+  parseISO,
+  startOfMonth,
+  subMonths,
+} from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,4 +40,23 @@ export function calculateAge(dateOfBirth: string): number {
     age--;
   }
   return age;
+}
+
+export function getLastMonthRange(reference = new Date()) {
+  const lastMonth = subMonths(reference, 1);
+  return {
+    start: startOfMonth(lastMonth),
+    end: endOfMonth(lastMonth),
+    label: format(lastMonth, "MMMM yyyy"),
+  };
+}
+
+export function isInLastMonth(dateStr: string, reference = new Date()): boolean {
+  try {
+    const parsed = parseISO(dateStr);
+    const { start, end } = getLastMonthRange(reference);
+    return isWithinInterval(parsed, { start, end });
+  } catch {
+    return false;
+  }
 }

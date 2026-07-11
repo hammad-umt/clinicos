@@ -1,6 +1,7 @@
 import { baseApi } from "./baseApi";
 import type { Bill, BillCreateRequest } from "@/types";
 import { mapBill, toApiId } from "@/lib/api-mappers";
+import { queryNullable } from "@/lib/api-query";
 
 export interface BillCreateFromTokenRequest {
   tokenId: string;
@@ -9,21 +10,43 @@ export interface BillCreateFromTokenRequest {
 
 export const billApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getAllBills: builder.query<Bill[], void>({
+      query: () => "/Bill/getall-bills",
+      transformResponse: (response: unknown) =>
+        Array.isArray(response)
+          ? response.map((item) => mapBill(item as Record<string, unknown>))
+          : [],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Bill" as const, id })),
+              { type: "Bill", id: "LIST" },
+            ]
+          : [{ type: "Bill", id: "LIST" }],
+    }),
     getBillByVisit: builder.query<Bill | null, string>({
-      query: (visitId) => `/Bill/visit/${visitId}`,
-      transformResponse: (response: unknown, _meta, visitId) => {
-        if (!response || typeof response !== "object") return null;
-        return mapBill(response as Record<string, unknown>, visitId);
+      async queryFn(visitId, api, extraOptions, baseQuery) {
+        return queryNullable(
+          `/Bill/visit/${visitId}`,
+          (dto) => mapBill(dto, visitId),
+          baseQuery,
+          api,
+          extraOptions
+        );
       },
       providesTags: (_result, _error, visitId) => [
         { type: "Bill", id: `VISIT_${visitId}` },
       ],
     }),
     getBillByToken: builder.query<Bill | null, string>({
-      query: (tokenId) => `/Bill/token/${tokenId}`,
-      transformResponse: (response: unknown, _meta, tokenId) => {
-        if (!response || typeof response !== "object") return null;
-        return mapBill(response as Record<string, unknown>, tokenId);
+      async queryFn(tokenId, api, extraOptions, baseQuery) {
+        return queryNullable(
+          `/Bill/token/${tokenId}`,
+          (dto) => mapBill(dto, tokenId),
+          baseQuery,
+          api,
+          extraOptions
+        );
       },
       providesTags: (_result, _error, tokenId) => [
         { type: "Bill", id: `TOKEN_${tokenId}` },
@@ -83,13 +106,11 @@ export const billApi = baseApi.injectEndpoints({
         ],
       }
     ),
-    markBillPaid: builder.mutation<Bill, string>({
+    markBillPaid: builder.mutation<void, string>({
       query: (id) => ({
         url: `/Bill/${id}/paid`,
         method: "PUT",
       }),
-      transformResponse: (response: unknown) =>
-        mapBill(response as Record<string, unknown>),
       invalidatesTags: (_result, _error, id) => [
         { type: "Bill", id },
         { type: "Bill", id: "LIST" },
@@ -102,6 +123,7 @@ export const billApi = baseApi.injectEndpoints({
 export const {
   useGetBillByVisitQuery,
   useGetBillByTokenQuery,
+  useGetAllBillsQuery,
   useCreateBillMutation,
   useCreateBillFromTokenMutation,
   useUpdateBillChargesMutation,

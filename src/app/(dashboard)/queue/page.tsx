@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Badge, FileDown, Play } from "lucide-react";
+import { Badge, FileDown, Play, Users, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,14 +37,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/shared/DataTable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -56,7 +49,7 @@ import {
   useGetTodayTokensQuery,
   useUpdateTokenStatusMutation,
 } from "@/store/api/tokenApi";
-import { useCreateVisitMutation, useUpdateVisitMutation } from "@/store/api/visitApi";
+import { useCreateVisitMutation } from "@/store/api/visitApi";
 import {
   useCreatePrescriptionMutation,
   useLazyGetPrescriptionPdfQuery,
@@ -108,7 +101,6 @@ export default function QueuePage() {
   );
   const [updateStatus] = useUpdateTokenStatusMutation();
   const [createVisit, { isLoading: creatingVisit }] = useCreateVisitMutation();
-  const [updateVisit] = useUpdateVisitMutation();
   const [createPrescription, { isLoading: creatingRx }] =
     useCreatePrescriptionMutation();
   const [fetchPdf] = useLazyGetPrescriptionPdfQuery();
@@ -133,7 +125,7 @@ export default function QueuePage() {
     name: "items",
   });
 
-  const startConsultation = (token: Token) => {
+  const startConsultation = async (token: Token) => {
     setActiveToken(token);
     setVisitId(null);
     setPrescriptionId(null);
@@ -144,30 +136,21 @@ export default function QueuePage() {
       notes: "",
       followUpDate: "",
     });
+
+    if (token.status === "Pending") {
+      try {
+        await updateStatus({ id: token.id, status: "InProgress" }).unwrap();
+        await refetch();
+      } catch {
+        toast.error("Failed to start consultation");
+      }
+    }
   };
 
   const handleStatusChange = async (id: string, status: TokenStatus) => {
-    const token = tokens?.find(t => t.id === id);
-    
-    // Prevent marking token as Completed without a visit
-    if (status === "Completed" && activeToken?.id === id && !visitId) {
-      toast.error("Create a visit before marking as completed");
-      return;
-    }
-
     const toastId = toast.loading("Updating status...");
     try {
       await updateStatus({ id, status }).unwrap();
-      
-      // If marked as Completed and there's a visit, update visit status
-      if (status === "Completed" && visitId) {
-        await updateVisit({
-          id: visitId,
-          diagnosis: "",
-          notes: "Completed",
-        }).unwrap();
-      }
-      
       await refetch();
       toast.success("Status updated", { id: toastId });
     } catch {
@@ -187,11 +170,13 @@ export default function QueuePage() {
       }).unwrap();
       setVisitId(visit.id);
       setShowPrescriptionDialog(true);
-      await updateStatus({ id: activeToken.id, status: "InProgress" }).unwrap();
-      toast.success("Visit created", { id: toastId });
-      refetch();
-    } catch {
-      toast.error("Failed to create visit", { id: toastId });
+      toast.success("Visit created — token marked complete", { id: toastId });
+      await refetch();
+    } catch (error: unknown) {
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        "Failed to create visit";
+      toast.error(message, { id: toastId });
     }
   };
 
@@ -235,6 +220,107 @@ export default function QueuePage() {
     }
   };
 
+  const printToken = (token: Token) => {
+    const printContent = `
+      <html>
+        <head>
+          <title>Token Slip</title>
+          <style>
+            body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; max-width: 300px; margin: 0 auto; color: #000; }
+            .header { font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+            .token-number { font-size: 56px; font-weight: 800; margin: 15px 0; line-height: 1; }
+            .patient { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+            .doctor { font-size: 14px; color: #444; }
+            .date { font-size: 12px; color: #666; margin-top: 24px; }
+            .footer { font-size: 12px; margin-top: 16px; border-top: 1px dashed #ccc; padding-top: 12px; color: #444; }
+            @media print {
+              body { padding: 0; margin: 0; max-width: 100%; }
+            }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="header">Clinic Token</div>
+          <div class="patient">${token.patientName}</div>
+          <div class="doctor">${token.doctorName ? `Dr. ${token.doctorName}` : "General"}</div>
+          <div class="token-number">#${token.tokenNumber}</div>
+          <div class="date">${new Date(token.createdAt).toLocaleString()}</div>
+          <div class="footer">Please wait in the waiting area until your number is called.</div>
+        </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+
+  const columns = [
+    {
+      key: "tokenNumber",
+      header: "Token #",
+      className: "w-24",
+      cell: (row: Token) => <span className="text-2xl font-bold text-accent">#{row.tokenNumber}</span>,
+    },
+    {
+      key: "patient",
+      header: "Patient",
+      cell: (row: Token) => <span className="text-lg font-medium">{row.patientName}</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row: Token) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (row: Token) => (
+        <div className="flex gap-2 items-center">
+          <Button
+            size="sm"
+            disabled={row.status === "Completed"}
+            className="bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (activeToken?.id === row.id && visitId) {
+                setShowPrescriptionDialog(true);
+              } else {
+                startConsultation(row);
+              }
+            }}
+          >
+            <Play className="mr-1 h-4 w-4" />
+            {activeToken?.id === row.id && row.status === "InProgress" && visitId ? "Prescription" : "Start"}
+          </Button>
+          <Select
+            value={row.status}
+            onValueChange={(v) => handleStatusChange(row.id, v as TokenStatus)}
+          >
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {tokenStatuses.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={() => printToken(row)}
+            title="Print Token Slip"
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   if (!doctorId) {
     return (
       <EmptyState
@@ -245,7 +331,7 @@ export default function QueuePage() {
   }
 
   return (
-    <div>
+    <div className="space-y-6 pb-6">
       <PageHeader title="My Queue" description="Today's patient queue" />
 
       {isError ? (
@@ -253,67 +339,13 @@ export default function QueuePage() {
       ) : isLoading ? (
         <SkeletonTable columns={4} />
       ) : !tokens?.length ? (
-        <EmptyState title="Queue is empty" description="No patients waiting today." />
+        <EmptyState title="Queue is empty" description="No patients waiting today." icon={Users} />
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-24">Token #</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tokens.map((token) => (
-                <TableRow key={token.id} className="hover:bg-muted/50">
-                  <TableCell className="text-2xl font-bold text-accent">
-                    #{token.tokenNumber}
-                  </TableCell>
-                  <TableCell className="text-lg font-medium">
-                    {token.patientName}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={token.status} />
-                  </TableCell>
-                  <TableCell className="flex gap-2 items-center">
-                    <Button
-                      size="sm"
-                      disabled={token.status === "Completed"}
-                      className="bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => {
-                        if (activeToken?.id === token.id && visitId) {
-                          setShowPrescriptionDialog(true);
-                        } else {
-                          startConsultation(token);
-                        }
-                      }}
-                    >
-                      <Play className="mr-1 h-4 w-4" />
-                      {activeToken?.id === token.id && token.status === "InProgress" && visitId ? "Prescription" : "Start"}
-                    </Button>
-                    <Select
-                      value={token.status}
-                      onValueChange={(v) =>
-                        handleStatusChange(token.id, v as TokenStatus)
-                      }
-                    >
-                      <SelectTrigger className="w-[140px] h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tokenStatuses.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={tokens}
+          getRowKey={(r) => r.id}
+        />
       )}
 
       <Sheet

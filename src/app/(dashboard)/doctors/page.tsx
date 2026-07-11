@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,6 +47,7 @@ import {
 } from "@/store/api/doctorApi";
 import { useGetDepartmentsQuery } from "@/store/api/departmentApi";
 import type { Doctor } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 
 const doctorSchema = z.object({
   name: z.string().min(2),
@@ -54,11 +55,8 @@ const doctorSchema = z.object({
   phone: z.string().min(10),
   specialization: z.string().min(2),
   departmentName: z.string().min(1, "Select a department"),
-  consultationFee: z.number().positive(),
+  consultationFee: z.number().min(1, "Consultation fee is required"),
   password: z.string().optional(),
-}).refine((data) => {
-  // Will be validated in onSubmit
-  return true;
 });
 
 type DoctorForm = z.infer<typeof doctorSchema>;
@@ -83,7 +81,7 @@ export default function DoctorsPage() {
       phone: "",
       specialization: "",
       departmentName: "",
-      consultationFee: 0,
+      consultationFee: 500,
       password: "",
     },
   });
@@ -107,15 +105,21 @@ export default function DoctorsPage() {
       phone: "",
       specialization: "",
       departmentName: "",
-      consultationFee: 0,
+      consultationFee: 500,
       password: "",
     });
   };
 
   const openEdit = (doctor: Doctor) => {
+    const matchedDepartment = departments?.find(
+      (department) => department.name === doctor.departmentName
+    );
+
     setEditDoctor(doctor);
     setDeptSearch(doctor.departmentName ?? "");
-    setSelectedDeptId(doctor.departmentId);
+    setSelectedDeptId(
+      doctor.departmentId || matchedDepartment?.id || null
+    );
     form.reset({
       name: doctor.name,
       email: doctor.email,
@@ -133,6 +137,11 @@ export default function DoctorsPage() {
       form.setError("departmentName", {
         message: "Please select a department from suggestions",
       });
+      return;
+    }
+
+    if (!editDoctor && !values.password?.trim()) {
+      form.setError("password", { message: "Password is required for new doctors" });
       return;
     }
 
@@ -162,7 +171,7 @@ export default function DoctorsPage() {
           password: values.password || undefined,
         }).unwrap();
         toast.success("Doctor created", { id: toastId });
-      } console.log("SUBMIT VALUES:", values);
+      }
       setDialogOpen(false);
       form.reset();
       setDeptSearch("");
@@ -187,7 +196,13 @@ export default function DoctorsPage() {
     { key: "name", header: "Name", cell: (row: Doctor) => <span className="font-medium">{row.name}</span> },
     { key: "email", header: "Email", cell: (row: Doctor) => row.email },
     { key: "phone", header: "Phone", cell: (row: Doctor) => row.phone },
-    { key: "fee", header: "Consultation Fee", cell: (row: Doctor) => row.consultationFee !== null && row.consultationFee !== undefined ? `${row.consultationFee.toString()}/pkr` : "—" }, { key: "spec", header: "Specialization", cell: (row: Doctor) => row.specialization },
+    {
+      key: "fee",
+      header: "Fee",
+      cell: (row: Doctor) =>
+        row.consultationFee != null ? formatCurrency(row.consultationFee) : "—",
+    },
+    { key: "spec", header: "Specialization", cell: (row: Doctor) => row.specialization },
     {
       key: "dept",
       header: "Department",
@@ -230,7 +245,7 @@ export default function DoctorsPage() {
   ];
 
   return (
-    <div>
+    <div className="space-y-6 pb-6">
       <PageHeader
         title="Doctors"
         description="Manage clinic doctors"
@@ -267,12 +282,16 @@ export default function DoctorsPage() {
                     name="consultationFee"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Consultation Fee ($)</FormLabel>
+                        <FormLabel>Consultation Fee (Rs)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             value={field.value ?? ""}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value === "" ? 500 : Number(e.target.value)
+                              )
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -345,7 +364,7 @@ export default function DoctorsPage() {
       ) : isLoading ? (
         <SkeletonTable columns={6} />
       ) : !doctors?.length ? (
-        <EmptyState title="No doctors" description="Add your first doctor to get started." />
+        <EmptyState title="No doctors" description="Add your first doctor to get started." icon={Stethoscope} />
       ) : (
         <DataTable columns={columns} data={doctors} getRowKey={(r) => r.id} />
       )}

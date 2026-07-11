@@ -35,7 +35,7 @@ export const doctorApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Doctor", id: "LIST" }, "Dashboard"],
     }),
     updateDoctor: builder.mutation<
-      Doctor,
+      void,
       { id: string; data: Partial<DoctorCreateRequest> }
     >({
       query: ({ id, data }) => ({
@@ -47,11 +47,9 @@ export const doctorApi = baseApi.injectEndpoints({
           phone: data.phone,
           consultationFee: data.consultationFee,
           specialization: data.specialization,
-          departmentId: data.departmentId ? toApiId(data.departmentId) : undefined,
+          departmentId: toApiId(data.departmentId!),
         },
       }),
-      transformResponse: (response: unknown) =>
-        mapDoctor(response as Record<string, unknown> | null | undefined),
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Doctor", id },
         { type: "Doctor", id: "LIST" },

@@ -49,7 +49,7 @@ export const patientApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Patient", id: "LIST" }, "Dashboard"],
     }),
     updatePatient: builder.mutation<
-      Patient,
+      void,
       { id: string; data: Partial<PatientCreateRequest> }
     >({
       query: ({ id, data }) => ({
@@ -64,8 +64,6 @@ export const patientApi = baseApi.injectEndpoints({
           address: data.address,
         }),
       }),
-      transformResponse: (response: unknown) =>
-        mapPatient(response as Record<string, unknown> | null | undefined),
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Patient", id },
         { type: "Patient", id: "LIST" },

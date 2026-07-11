@@ -140,6 +140,9 @@ export interface Prescription {
   visitId: string;
   items: PrescriptionItem[];
   notes?: string;
+  followUpDate?: string;
+  patientName?: string;
+  doctorName?: string;
   createdAt: string;
 }
 

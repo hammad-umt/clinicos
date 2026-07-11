@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -51,6 +51,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { DataTable } from "@/components/shared/DataTable";
 import { SkeletonTable } from "@/components/shared/SkeletonTable";
 import { SkeletonSheetDetail } from "@/components/shared/PageSkeletons";
+import { EmptyState } from "@/components/shared/EmptyState";
 import {
   useSearchPatientsMutation,
   useGetPatientByIdQuery,
@@ -96,7 +97,6 @@ export default function PatientsPage() {
   const [updatePatient, { isLoading: updating }] = useUpdatePatientMutation();
 
   const { data: allPatients, isLoading: loadingPatients } = useGetAllPatientsQuery(undefined);
-  console.log("All patients:", allPatients);
   const { data: patientDetail, isLoading: detailLoading } = useGetPatientByIdQuery(
     selectedId ?? "",
     { skip: !selectedId }
@@ -400,28 +400,18 @@ export default function PatientsPage() {
       {(loadingPatients && !patients.length) || isSearching ? (
         <SkeletonTable columns={5} />
       ) : isEmptySearch ? (
-        <div className="rounded-3xl border border-dashed border-border bg-background p-10 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <FileSearch className="h-6 w-6" />
-          </div>
-          <h3 className="text-xl font-semibold">No matching patients.</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Try another search term to find the right patient.
-          </p>
-        </div>
+        <EmptyState
+          title="No matching patients."
+          description="Try another search term to find the right patient."
+          icon={FileSearch}
+        />
       ) : isEmptySystem ? (
-        <div className="rounded-3xl border border-dashed border-border bg-background p-10 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <ClipboardList className="h-6 w-6" />
-          </div>
-          <h3 className="text-xl font-semibold">No patients found.</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Add your first patient to begin managing records.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Button onClick={openCreate}>Create Patient</Button>
-          </div>
-        </div>
+        <EmptyState
+          title="No patients found."
+          description="Add your first patient to begin managing records."
+          icon={ClipboardList}
+          action={<Button onClick={openCreate}>Create Patient</Button>}
+        />
       ) : (
         <DataTable
           columns={columns}
@@ -525,18 +515,12 @@ export default function PatientsPage() {
                     ))}
                   </div>
                 ) : !visits?.length ? (
-                  <div className="rounded-3xl border border-dashed border-border bg-background p-8 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <FileText className="h-6 w-6" />
-                    </div>
-                    <h5 className="text-lg font-semibold">No visits recorded yet</h5>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Create the first visit to start tracking this patient&apos;s clinical history.
-                    </p>
-                    <div className="mt-5">
-                      <Button onClick={() => handleNewVisit(patientDetail.id)}>Create First Visit</Button>
-                    </div>
-                  </div>
+                  <EmptyState
+                    title="No visits recorded yet"
+                    description="Create the first visit to start tracking this patient's clinical history."
+                    icon={FileText}
+                    action={<Button onClick={() => handleNewVisit(patientDetail.id)}>Create First Visit</Button>}
+                  />
                 ) : (
                   <div className="space-y-4">
                     {visits.map((visit) => (

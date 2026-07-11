@@ -102,13 +102,12 @@ export default function SettingsPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-6 pb-6">
       <PageHeader
         title="Settings"
         description="Manage clinic information and preferences"
       />
-       <div className="flex-1 flex items-start justify-center px-4 py-8">
-      <Card className="w-full max-w-2xl shadow-sm">
+      <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Clinic Information</CardTitle>
           <CardDescription>
@@ -168,7 +167,5 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
     </div>
-    </div>
-
   );
 }

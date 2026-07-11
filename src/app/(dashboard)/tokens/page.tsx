@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import { Search, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,14 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/shared/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -46,7 +39,7 @@ import {
   useUpdateTokenStatusMutation,
 } from "@/store/api/tokenApi";
 import { useCreateBillFromTokenMutation } from "@/store/api/billApi";
-import type { Patient, TokenStatus } from "@/types";
+import type { Patient, Token, TokenStatus } from "@/types";
 
 const issueSchema = z.object({
   patientId: z.string().min(1, "Select a patient"),
@@ -128,17 +121,23 @@ export default function TokensPage() {
     const { patientId, doctorId, doctorName } = values;
     try {
       const token = await createToken({ patientId, doctorId }).unwrap();
-      
-      // Auto-create bill for this token
-      await createBillFromToken({ tokenId: token.id, patientId }).unwrap();
-      
-      toast.success("Token issued and bill created", { id: toastId });
+
+      try {
+        await createBillFromToken({ tokenId: token.id, patientId }).unwrap();
+        toast.success("Token issued and bill created", { id: toastId });
+      } catch {
+        toast.success("Token issued successfully", { id: toastId });
+      }
+
       form.reset({ patientId: "", doctorId, doctorName });
       setSelectedPatient(null);
       setSearchQuery("");
       if (queueDoctorId === doctorId) refetch();
-    } catch {
-      toast.error("Failed to issue token", { id: toastId });
+    } catch (error: unknown) {
+      const message =
+        (error as { data?: { message?: string } })?.data?.message ||
+        "Failed to issue token";
+      toast.error(message, { id: toastId });
     }
   };
 
@@ -153,8 +152,93 @@ export default function TokensPage() {
     }
   };
 
+  const printToken = (token: Token) => {
+    const printContent = `
+      <html>
+        <head>
+          <title>Token Slip</title>
+          <style>
+            body { font-family: system-ui, sans-serif; text-align: center; padding: 20px; max-width: 300px; margin: 0 auto; color: #000; }
+            .header { font-size: 20px; font-weight: 600; margin-bottom: 15px; }
+            .token-number { font-size: 56px; font-weight: 800; margin: 15px 0; line-height: 1; }
+            .patient { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+            .doctor { font-size: 14px; color: #444; }
+            .date { font-size: 12px; color: #666; margin-top: 24px; }
+            .footer { font-size: 12px; margin-top: 16px; border-top: 1px dashed #ccc; padding-top: 12px; color: #444; }
+            @media print {
+              body { padding: 0; margin: 0; max-width: 100%; }
+            }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="header">Clinic Token</div>
+          <div class="patient">${token.patientName}</div>
+          <div class="doctor">${token.doctorName ? `Dr. ${token.doctorName}` : "General"}</div>
+          <div class="token-number">#${token.tokenNumber}</div>
+          <div class="date">${new Date(token.createdAt).toLocaleString()}</div>
+          <div class="footer">Please wait in the waiting area until your number is called.</div>
+        </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+
+  const columns = [
+    {
+      key: "tokenNumber",
+      header: "Token #",
+      cell: (row: any) => <span className="font-bold">#{row.tokenNumber}</span>,
+    },
+    {
+      key: "patient",
+      header: "Patient",
+      cell: (row: any) => row.patientName,
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row: any) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (row: any) => (
+        <div className="flex items-center gap-2">
+          <Select
+            value={row.status}
+            onValueChange={(v) => handleStatusChange(row.id, v as TokenStatus)}
+          >
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {tokenStatuses.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={() => printToken(row)}
+            title="Print Token Slip"
+          >
+            <Printer className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div>
+    <div className="space-y-6 pb-6">
       <PageHeader title="Tokens" description="Issue tokens and manage today's queue" />
 
       <Tabs defaultValue="issue">
@@ -211,11 +295,10 @@ export default function TokensPage() {
                       );
 
                       const selectedDoctorLabel = selectedDoctor
-                        ? `Dr. ${selectedDoctor.name}${
-                            selectedDoctor.specialization
-                              ? ` — ${selectedDoctor.specialization}`
-                              : ""
-                          }`
+                        ? `Dr. ${selectedDoctor.name}${selectedDoctor.specialization
+                          ? ` — ${selectedDoctor.specialization}`
+                          : ""
+                        }`
                         : "";
 
                       return (
@@ -247,9 +330,8 @@ export default function TokensPage() {
 
                             <SelectContent>
                               {doctors?.map((doctor) => {
-                                const label = `Dr. ${doctor.name}${
-                                  doctor.specialization ? ` — ${doctor.specialization}` : ""
-                                }`;
+                                const label = `Dr. ${doctor.name}${doctor.specialization ? ` — ${doctor.specialization}` : ""
+                                  }`;
 
                                 return (
                                   <SelectItem key={doctor.id} value={String(doctor.id)}>
@@ -311,48 +393,13 @@ export default function TokensPage() {
           ) : isLoading || doctorsLoading ? (
             <SkeletonTable columns={4} />
           ) : !tokens?.length ? (
-            <EmptyState title="Queue is empty" description="No tokens for this doctor today." />
+            <EmptyState title="Queue is empty" description="No tokens for this doctor today." icon={Search} />
           ) : (
-            <div className="rounded-lg border bg-card">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Token #</TableHead>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tokens.map((token) => (
-                    <TableRow key={token.id} className="hover:bg-muted/50">
-                      <TableCell className="font-bold">#{token.tokenNumber}</TableCell>
-                      <TableCell>{token.patientName}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={token.status} />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={token.status}
-                          onValueChange={(v) =>
-                            handleStatusChange(token.id, v as TokenStatus)
-                          }
-                        >
-                          <SelectTrigger className="w-[160px] h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tokenStatuses.map((s) => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              columns={columns}
+              data={tokens}
+              getRowKey={(r) => r.id}
+            />
           )}
         </TabsContent>
       </Tabs>

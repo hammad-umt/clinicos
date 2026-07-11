@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/store/authSlice";
+import { useGetClinicInfoQuery } from "@/store/api/clinicApi";
 
 interface SidebarProps {
   onNavigate?: () => void;
@@ -15,6 +16,7 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const { role } = useAuth();
+  const { data: clinic } = useGetClinicInfoQuery();
   const items = role ? getNavItemsForRole(role) : [];
   const dispatch = useDispatch();
   const router = useRouter();
@@ -34,8 +36,12 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <Activity className="h-6 w-6 text-accent-foreground" />
         </div>
         <div>
-          <p className="text-lg font-bold text-white leading-none">ClinicOS</p>
-          <p className="text-sm text-sidebar-foreground/60 mt-0.5">Lahore, PK</p>
+          <p className="text-lg font-bold text-white leading-none">
+            {clinic?.name ?? "ClinicOS"}
+          </p>
+          <p className="text-sm text-sidebar-foreground/60 mt-0.5">
+            {clinic?.city ?? "Lahore, PK"}
+          </p>
         </div>
       </div>
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">

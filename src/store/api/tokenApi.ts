@@ -50,7 +50,7 @@ export const tokenApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Token", id: "LIST" }, "Dashboard"],
     }),
     updateTokenStatus: builder.mutation<
-      Token,
+      void,
       { id: string; status: TokenStatus }
     >({
       query: ({ id, status }) => ({
@@ -59,8 +59,6 @@ export const tokenApi = baseApi.injectEndpoints({
         )}`,
         method: "PUT",
       }),
-      transformResponse: (response: unknown) =>
-        mapToken(response as Record<string, unknown> | null | undefined),
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Token", id },
         { type: "Token", id: "LIST" },

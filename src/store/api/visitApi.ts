@@ -4,8 +4,8 @@ import { mapArray, mapVisit, mapVisitCreate } from "@/lib/api-mappers";
 
 export interface VisitUpdateRequest {
   id: string;
+  chiefComplaint?: string;
   diagnosis?: string;
-  notes?: string;
 }
 
 export const visitApi = baseApi.injectEndpoints({
@@ -51,8 +51,8 @@ export const visitApi = baseApi.injectEndpoints({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: {
-          diagnosis: body.diagnosis,
-          instructions: body.notes,
+          chiefComplaint: body.chiefComplaint ?? "",
+          diagnosis: body.diagnosis ?? "",
         },
       }),
       transformResponse: (response: unknown) =>

@@ -159,7 +159,10 @@ export function mapDoctor(dto: Record<string, unknown> | null | undefined): Doct
     email: (dto.email as string) ?? "",
     phone: (dto.phone as string) ?? "",
     specialization: (dto.specialization as string) ?? "",
-    departmentId: toId(dto.departmentId as number),
+    departmentId: toId(
+      getDtoValue<number>(dto, "departmentId", "DepartmentId") ??
+        (dto.departmentId as number)
+    ),
     consultationFee: (dto.consultationFee as number) ?? 0,
     departmentName: (dto.departmentName as string) ?? undefined,
     isActive: (dto.isActive as boolean) ?? true,
@@ -279,12 +282,17 @@ export function mapVisit(dto: Record<string, unknown> | null | undefined): Visit
 }
 
 export function mapVisitCreate(data: VisitCreateRequest) {
+  const tokenId = data.tokenId ? toApiId(data.tokenId) : NaN;
+  const chiefComplaint = data.notes?.trim()
+    ? `${data.chiefComplaint}\n\nNotes: ${data.notes.trim()}`
+    : data.chiefComplaint;
+
   return {
     patientId: toApiId(data.patientId),
     doctorId: toApiId(data.doctorId),
-    tokenId: data.tokenId ? toApiId(data.tokenId) : undefined,
-    chiefComplaint: data.chiefComplaint,
-    diagnosis: data.diagnosis,
+    tokenId,
+    chiefComplaint,
+    diagnosis: data.diagnosis ?? "",
   };
 }
 
@@ -314,15 +322,48 @@ export function mapPrescription(dto: Record<string, unknown> | null | undefined)
     visitId: toId(dto.visitId as number),
     items,
     notes: (dto.instructions as string) ?? undefined,
-    createdAt: (dto.issuedAt as string) ?? new Date().toISOString(),
+    followUpDate:
+      getDtoValue<string>(dto, "followUpDate", "FollowUpDate") ?? undefined,
+    patientName:
+      getDtoValue<string>(dto, "patientName", "PatientName") ?? undefined,
+    doctorName:
+      getDtoValue<string>(dto, "doctorName", "DoctorName") ?? undefined,
+    createdAt:
+      getDtoValue<string>(dto, "issuedAt", "IssuedAt") ??
+      new Date().toISOString(),
   };
 }
 
+function toFutureFollowUpDate(dateStr?: string): string {
+  const fallback = new Date();
+  fallback.setDate(fallback.getDate() + 7);
+  fallback.setHours(12, 0, 0, 0);
+
+  if (!dateStr?.trim()) {
+    return fallback.toISOString();
+  }
+
+  const parsed = new Date(`${dateStr.trim()}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return fallback.toISOString();
+  }
+
+  if (parsed <= new Date()) {
+    parsed.setDate(parsed.getDate() + 1);
+  }
+
+  return parsed.toISOString();
+}
+
 export function mapPrescriptionCreate(data: PrescriptionCreateRequest) {
+  const instructions =
+    data.notes?.trim() ||
+    "Take medicines as prescribed. Follow dosage and duration carefully.";
+
   return {
     visitId: toApiId(data.visitId),
-    instructions: data.notes || "",
-    followUpDate: data.followUpDate || "",
+    instructions,
+    followUpDate: toFutureFollowUpDate(data.followUpDate),
     medicines: data.items.map((item) => ({
       medicineName: item.medicine,
       dosage: item.dosage,
@@ -356,7 +397,7 @@ export function mapBill(
   const isPaid = Boolean(dto.isPaid);
   return {
     id: toId(dto.id as number),
-    visitId: visitId ?? toId(dto.visitId as number),
+    visitId: visitId ?? toId(getDtoValue<number>(dto, "visitId", "VisitId")),
     patientName: (dto.patientName as string) ?? "",
     doctorName: (dto.doctorName as string) ?? undefined,
     consultationFee: (dto.consultationFee as number) ?? 0,

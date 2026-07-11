@@ -10,14 +10,12 @@ export const clinicApi = baseApi.injectEndpoints({
         mapClinic(response as Record<string, unknown> | null | undefined),
       providesTags: ["Clinic"],
     }),
-    updateClinic: builder.mutation<ClinicInfo, ClinicUpdateRequest>({
+    updateClinic: builder.mutation<void, ClinicUpdateRequest>({
       query: (body) => ({
         url: "/Clinic",
         method: "PUT",
         body: mapClinicUpdate(body),
       }),
-      transformResponse: (response: unknown) =>
-        mapClinic(response as Record<string, unknown> | null | undefined),
       invalidatesTags: ["Clinic"],
     }),
   }),

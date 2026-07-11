@@ -1,17 +1,23 @@
 import { baseApi } from "./baseApi";
 import type { Prescription, PrescriptionCreateRequest } from "@/types";
 import {
-  mapNullable,
   mapPrescription,
   mapPrescriptionCreate,
 } from "@/lib/api-mappers";
+import { queryNullable } from "@/lib/api-query";
 
 export const prescriptionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getPrescriptionByVisit: builder.query<Prescription | null, string>({
-      query: (visitId) => `/Prescription/visit/${visitId}`,
-      transformResponse: (response: unknown) =>
-        mapNullable(response, mapPrescription),
+      async queryFn(visitId, api, extraOptions, baseQuery) {
+        return queryNullable(
+          `/Prescription/visit/${visitId}`,
+          mapPrescription,
+          baseQuery,
+          api,
+          extraOptions
+        );
+      },
       providesTags: (_result, _error, visitId) => [
         { type: "Prescription", id: `VISIT_${visitId}` },
       ],
